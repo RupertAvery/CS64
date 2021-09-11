@@ -12,7 +12,6 @@ namespace CS64.Core.CPU
         private const int cpuclockrate = 1789773; // NTSC
         private int old_s;
 
-        public VICII Vic;
         public SID Sid;
 
         public void GetSamplesSync(out short[] samples, out int nsamp)

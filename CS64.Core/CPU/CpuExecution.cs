@@ -12,6 +12,9 @@ namespace CS64.Core.CPU
         private StringBuilder log;
         private int _instructionCyclesLeft;
         public bool Debug { get; set; }
+        public VICII Vic;
+        public CIA Cia1;
+        public CIA Cia2;
 
         public MC6502State()
         {
@@ -22,6 +25,9 @@ namespace CS64.Core.CPU
         {
             Vic = new VICII(this);
             Sid = new SID(this);
+            Cia1 = new CIA(0xDC00);
+            Cia2 = new CIA(0xDD00);
+
             MC6502InstructionSet.InitOpcodeTable();
 
             blip.SetRates((uint)cpuclockrate, 44100);
@@ -104,10 +110,17 @@ namespace CS64.Core.CPU
                 }
             }
 
-            //if (PC == 0xFCFB)
-            //{
-            //    var x = 1;
-            //}
+            switch (PC)
+            {
+                // LDA 7F
+                // STA DC00
+                case 0xFDAB:
+                case 0xFDD9:
+                {
+                    var x = 1;
+                    break;
+                }
+            }
 
             var ins = BusRead(PC);
             var bytes = MC6502InstructionSet.bytes[ins];

@@ -126,7 +126,7 @@ namespace CS64.Core.CPU
             I = 1;
             Cycles = 7; // takes 7 cycles to reset
             
-            IO_Port_DR = 0xFF; // enable KERNAL, I/O, BASIC
+            IO_Port_DR = 0x1F; // enable KERNAL, I/O, BASIC
 
             _instructionCyclesLeft = 0;
             dma_page = 0;
@@ -155,31 +155,32 @@ namespace CS64.Core.CPU
 
         public void BusWrite(uint address, uint value)
         {
-            if (address >= 0xD000 && address <= 0xDFFF)
+            switch (address)
             {
-                CharROMWrite(address, value);
-            }
-            else if (address == 0x0001)
-            {
-                IO_Port_DR = (byte) value;
-            }
-            else if (address == 0x0000)
-            {
-                IO_Port_DDR = (byte)value;
-            }
-            else if (address >= 0 && address <= 0xFFFF)
-            {
-                // fall through to RAM
-                RAM[address] = (byte)value;
+                case >= 0xD000 and <= 0xDFFF:
+                    CharROMWrite(address, value);
+                    break;
+                case 0x0001:
+                    value &= IO_Port_DDR;
+                    IO_Port_DR &= IO_Port_DDR ^ 0xFF;
+                    IO_Port_DR |= value;
+                    break;
+                case 0x0000:
+                    IO_Port_DDR = value;
+                    break;
+                case >= 0 and <= 0xFFFF:
+                    // fall through to RAM
+                    RAM[address] = (byte)value;
+                    break;
             }
         }
 
         // https://www.c64-wiki.com/wiki/Bank_Switching
 
         //data direction register
-        private byte IO_Port_DDR;
+        public uint IO_Port_DDR;
         //data register
-        private byte IO_Port_DR;
+        public uint IO_Port_DR;
 
         public uint CharROMRead(uint address)
         {
@@ -191,11 +192,12 @@ namespace CS64.Core.CPU
                 {
                     >= 0xD000 and <= 0xD3FF => Vic.Read(address),
                     >= 0xD400 and <= 0xD7FF => Sid.Read(address),
-                    >= 0xD800 and <= 0xDBFF => COLOR[address - 0xD800],
-                    >= 0xDC00 and <= 0xDCFF => 0,
-                    >= 0xDD00 and <= 0xDDFF => 0,
-                    >= 0xDE00 and <= 0xDEFF => 0,
-                    >= 0xDF00 and <= 0xDFFF => 0,
+                    // maybe OR with the upper nybble of previous contents of the data bus - for accuracy
+                    >= 0xD800 and <= 0xDBFF => (COLOR[address - 0xD800] & 0xFU),
+                    >= 0xDC00 and <= 0xDCFF => Cia1.Read(address), // Keyboard
+                    >= 0xDD00 and <= 0xDDFF => Cia2.Read(address), // VIC bankswitch
+                    >= 0xDE00 and <= 0xDEFF => 0, // I/O 1
+                    >= 0xDF00 and <= 0xDFFF => 0, // I/O 2
                 };
             }
             else
@@ -220,7 +222,16 @@ namespace CS64.Core.CPU
                 }
                 else if (address >= 0xD800 && address <= 0xDBFF)
                 {
-                    COLOR[address - 0xD800] = (byte)value;
+                    // Technically, only the lower 4 bits are connected 
+                    COLOR[address - 0xD800] = (byte)(COLOR[address - 0xD800] | (value & 0xFU));
+                }
+                else if (address >= 0xDC00 && address <= 0xDCFF)
+                {
+                    Cia1.Write(address, value);
+                }
+                else if (address >= 0xDD00 && address <= 0xDDFF)
+                {
+                    Cia2.Write(address, value); // VIC bankswitch
                 }
             }
             else
