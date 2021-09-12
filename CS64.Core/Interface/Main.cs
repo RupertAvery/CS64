@@ -12,7 +12,17 @@ namespace CS64.Core.Interface
 {
     public class Main : IDisposable
     {
-        public const int CYCLES_PER_FRAME = 89342;
+        //PAL C64 master clock: 17.734475 MHz / 18
+        //NTSC C64 master clock: 14.31818 MHz / 14
+        //
+        //CLOCK_PAL = 985248 Hz * 8
+        //CLOCK_NTSC = 1022727 Hz * 8
+
+        //CLOCK_VICII_PAL = 7881984 Hz / 60 = 131366 cycles / frame
+        //CLOCK_VICII_NTSC = 8181816 Hz / 60 = 136363 cycles / frame
+
+        public const int CYCLES_PER_FRAME = 131366;
+
         private const double NTSC_SECONDS_PER_FRAME = 1 / 60D;
         private const double PAL_SECONDS_PER_FRAME = 1 / 50D;
         private double _fps;
@@ -33,7 +43,7 @@ namespace CS64.Core.Interface
         private bool _fastForward;
         private int _stateSlot = 1;
 
-        private MC6502State _c64 ;
+        private MC6502State _c64;
 
         private uint _frames;
         private bool _hasState;
@@ -307,7 +317,6 @@ namespace CS64.Core.Interface
         {
             _cyclesRan += CYCLES_PER_FRAME;
             _cyclesLeft += CYCLES_PER_FRAME;
-            _cyclesLeft -= (int)(_frames % 2);
 
             while (_cyclesLeft > 0)
             {

@@ -34,7 +34,10 @@ namespace CS64.Core.CPU
         public uint Step()
         {
             Vic.Clock();
-            ClockCpu();
+            if (BusAvailable)
+            {
+                ClockCpu();
+            }
 
 
             int s = Sid.EmitSample();

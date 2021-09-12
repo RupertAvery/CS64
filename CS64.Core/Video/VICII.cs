@@ -426,6 +426,9 @@ namespace CS64.Core.Video
 
             if (cycle == 58)
             {
+                // not sure when this is supposed to happen
+                _c64.BusAvailable = true;
+
                 // In the first phase of cycle 58, the VIC checks if RC = 7.If so, the video
                 // logic goes to idle state and VCBASE is loaded from VC(VC->VCBASE)
                 if (row_counter == 7)
