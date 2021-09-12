@@ -23,11 +23,11 @@ namespace CS64.Core.Video
         //  6569   |  PAL-B |  312  |   284   |   63    |    403
 
         private uint CyclesPerLine = 64;
-        private uint MaxLines = 262;
+        private uint MaxLines = 312;
         private uint VisibleLines = 234;
 
-        public int Width = 411;
-        public int Height = 234;
+        public int Width = 403;
+        public int Height = 284;
 
         public uint[] buffer;
         public uint[] register = new uint[47];
@@ -53,21 +53,21 @@ namespace CS64.Core.Video
         public uint[] palette =
         {
             0x000000,
-            0x4a4a4a,
-            0x7b7b7b,
-            0xb2b2b2,
-            0xffffff,
-            0x813338,
-            0xc46c71,
-            0x553800,
-            0x8e5029,
-            0xedf171,
-            0xa9ff9f,
-            0x56ac4d,
-            0x75cec8,
-            0x706deb,
-            0x2e2c9b,
-            0x8e3c97
+            0xFFFFFF,
+            0x313A8C,
+            0xBDB563,
+            0x943A8C,
+            0x4AA552,
+            0x8C3142,
+            0x73CEBD,
+            0x29528C,
+            0x004252,
+            0x636BBD,
+            0x525252,
+            0x7B7B7B,
+            0x8CE694,
+            0xC56B7B,
+            0x9C9C9C
         };
 
         public VICII(MC6502State c64)
@@ -333,7 +333,7 @@ namespace CS64.Core.Video
                 var c_data = video_matrix_line[video_matrix_line_index];
 
                 // TEST: Display incrementing data to show character set
-                c_data = video_counter;
+                //c_data = video_counter;
 
                 var address = (CB << 11) | (c_data << 3) | (row_counter & 7);
                 g_data = VicRead(address);
@@ -495,7 +495,7 @@ namespace CS64.Core.Video
                     {
                         main_border = true;
                     }
-                    if (y == border_bottom && cycle == 64)
+                    if (y == border_bottom && cycle == CyclesPerLine)
                     {
                         vertical_border = true;
                     }
@@ -552,7 +552,7 @@ namespace CS64.Core.Video
             //    cycle = 0;
             //}
 
-            if (cycle >= 64)
+            if (cycle >= CyclesPerLine)
             {
                 // IRQ
                 // The negative edge of IRQ on a raster interrupt has been used to define the
@@ -569,7 +569,7 @@ namespace CS64.Core.Video
                 // hack - when should we clear BLC?
                 bad_line_condition = false;
 
-                if (raster_line >= 262)
+                if (raster_line >= MaxLines)
                 {
                     raster_line = 0;
                     // SHould this be here?
