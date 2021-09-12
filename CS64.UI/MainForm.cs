@@ -49,7 +49,7 @@ namespace CS64.UI
 
         private void MainForm_Load(object sender, EventArgs e)
         {
-            SetSize(4);
+            SetSize(3);
 
             slot1ToolStripMenuItem.Click += (o, args) => { UncheckSlots(); ChangeSlot?.Invoke(1); slot1ToolStripMenuItem.Checked = true; };
             slot2ToolStripMenuItem.Click += (o, args) => { UncheckSlots(); ChangeSlot?.Invoke(2); slot2ToolStripMenuItem.Checked = true; };
@@ -74,7 +74,7 @@ namespace CS64.UI
         private void SetSize(int scale)
         {
             //ResizeWindow?.Invoke(256 * scale, 240 * scale + menuStrip1.Height);
-            Size = new Size(320 * scale, 200 * scale + menuStrip1.Height);
+            Size = new Size((int)_main.Width * scale, (int)_main.Height * scale + menuStrip1.Height);
             // This resizes the window *twice*
             //Width = 256 * scale;
             //Height = 240 * scale + menuStrip1.Height;

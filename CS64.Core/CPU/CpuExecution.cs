@@ -19,17 +19,15 @@ namespace CS64.Core.CPU
         public MC6502State()
         {
             log = new StringBuilder();
-        }
-
-        public void Init()
-        {
             Vic = new VICII(this);
             Sid = new SID(this);
             Cia1 = new CIA(0xDC00);
             Cia2 = new CIA(0xDD00);
+        }
 
+        public void Init()
+        {
             MC6502InstructionSet.InitOpcodeTable();
-
             blip.SetRates((uint)cpuclockrate, 44100);
         }
 

@@ -39,6 +39,7 @@ namespace CS64.Core.CPU
         public uint Cycles;
         public uint Instructions;
 
+        public bool BusAvailable = true;
 
         public uint dma_page;
         public uint dma_address;
@@ -49,7 +50,6 @@ namespace CS64.Core.CPU
 
         public uint[] Controller = new uint[2];
         public uint[] ControllerRegister = new uint[2];
-
         public uint P
         {
             get =>

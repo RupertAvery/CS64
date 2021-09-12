@@ -33,7 +33,7 @@ namespace CS64.Core.Interface
         private bool _fastForward;
         private int _stateSlot = 1;
 
-        private MC6502State _c64;
+        private MC6502State _c64 ;
 
         private uint _frames;
         private bool _hasState;
@@ -45,6 +45,8 @@ namespace CS64.Core.Interface
         private IntPtr Window;
 
         public InputProvider InputProvider { get; private set; }
+        public int Width => _c64.Vic.Width;
+        public int Height => _c64.Vic.Height;
 
         private Playback _playback;
 
@@ -146,7 +148,7 @@ namespace CS64.Core.Interface
                 SaveState = SaveState
             };
 
-            _c64 = new MC6502State();
+
 
             _c64.Init();
 
@@ -159,7 +161,7 @@ namespace CS64.Core.Interface
             //Window = SDL_CreateWindow("Fami", 0, 0, WIDTH * _scale, HEIGHT * _scale,
             //    SDL_WindowFlags.SDL_WINDOW_SHOWN | SDL_WindowFlags.SDL_WINDOW_RESIZABLE );
 
-            _videoProvider = new VideoProvider(Window);
+            _videoProvider = new VideoProvider(Window, _c64.Vic.Width, _c64.Vic.Height);
             _audioProvider = new AudioProvider();
             InputProvider = new InputProvider(ControllerEvent);
 
@@ -189,6 +191,7 @@ namespace CS64.Core.Interface
 
         public Main()
         {
+            _c64 = new MC6502State();
         }
 
         private void ControllerEvent(object sender, ControllerEventArgs args)

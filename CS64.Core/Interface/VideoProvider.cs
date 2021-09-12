@@ -7,8 +7,8 @@ namespace CS64.Core.Interface
 {
     public class VideoProvider : IDisposable
     {
-        private const int WIDTH = 320;
-        private const int HEIGHT = 200;
+        private int VicWidth;
+        private int VicHeight;
 
 
         private const double RATIO_4x3 = 4 / 3d;
@@ -21,10 +21,14 @@ namespace CS64.Core.Interface
         private IntPtr _texture;
         private IntPtr _font;
 
-        public VideoProvider(IntPtr window)
+        public VideoProvider(IntPtr window, int width, int height)
         {
             Window = window;
-            _displayBuf = new uint[WIDTH * HEIGHT];
+
+            VicWidth = width;
+            VicHeight = height;
+
+            _displayBuf = new uint[VicWidth * VicHeight];
             _font = TTF_OpenFont(Path.Combine("Fonts", "Modeseven.ttf"), 24);
 
             //string fontsfolder = Environment.GetFolderPath(Environment.SpecialFolder.Fonts);
@@ -63,14 +67,14 @@ namespace CS64.Core.Interface
                 SDL_RendererFlags.SDL_RENDERER_ACCELERATED | SDL_RendererFlags.SDL_RENDERER_PRESENTVSYNC);
 
             _texture = SDL_CreateTexture(_renderer, SDL_PIXELFORMAT_ABGR8888,
-                (int)SDL_TextureAccess.SDL_TEXTUREACCESS_STREAMING, WIDTH, HEIGHT);
+                (int)SDL_TextureAccess.SDL_TEXTUREACCESS_STREAMING, VicWidth, VicHeight);
 
             SDL_GetWindowSize(Window, out int w, out int h);
 
             CanvasWidth = w;
             CanvasHeight = h;
 
-            Ratio = Math.Min((double)h / (double)HEIGHT, (double)w / (double)WIDTH);
+            Ratio = Math.Min((double)h / (double)VicHeight, (double)w / (double)VicWidth);
 
             double aspect_ratio = RATIO_1x1;
 
@@ -82,13 +86,13 @@ namespace CS64.Core.Interface
                         int fillHeight;
                         if (IntegerScaling)
                         {
-                            fillWidth = ((int)(Ratio * WIDTH) / WIDTH) * WIDTH;
-                            fillHeight = ((int)(Ratio * HEIGHT) / HEIGHT) * HEIGHT;
+                            fillWidth = ((int)(Ratio * VicWidth) / VicWidth) * VicWidth;
+                            fillHeight = ((int)(Ratio * VicHeight) / VicHeight) * VicHeight;
                         }
                         else
                         {
-                            fillWidth = (int)(Ratio * WIDTH);
-                            fillHeight = (int)(Ratio * HEIGHT);
+                            fillWidth = (int)(Ratio * VicWidth);
+                            fillHeight = (int)(Ratio * VicHeight);
                         }
 
                         fillWidth = (int)(fillWidth * aspect_ratio);
@@ -118,11 +122,11 @@ namespace CS64.Core.Interface
 
         public unsafe void Render(uint[] buffer)
         {
-            for (var y = 0; y < HEIGHT; y++)
+            for (var y = 0; y < VicHeight; y++)
             {
-                for (var x = 0; x < WIDTH; x++)
+                for (var x = 0; x < VicWidth; x++)
                 {
-                    var p = buffer[x + y * WIDTH];
+                    var p = buffer[x + y * VicWidth];
                     //var r = p >> 16 & 0xFF;
                     //var g = p >> 8 & 0xFF;
                     //var b = p & 0xFF;
@@ -139,13 +143,13 @@ namespace CS64.Core.Interface
                     //}
 
                     //p = 0xFF000000 | (r << 16) | (g << 8) | b;
-                    _displayBuf[x + y * WIDTH] = p;
+                    _displayBuf[x + y * VicWidth] = p;
                 }
             }
 
             //CopyPixels(Gba.Ppu.Renderer.ScreenFront, DisplayBuf, WIDTH * HEIGHT, ColorCorrection);
             fixed (void* ptr = _displayBuf)
-                SDL_UpdateTexture(_texture, IntPtr.Zero, (IntPtr)ptr, WIDTH * 4);
+                SDL_UpdateTexture(_texture, IntPtr.Zero, (IntPtr)ptr, VicWidth * 4);
 
             SDL_Rect dest = new();
 
