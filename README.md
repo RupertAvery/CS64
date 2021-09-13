@@ -5,6 +5,10 @@
 This is a work in progress and only the most basic functionality is working. Currently the emulator will boot into BASIC 
 and you should be able to type in programs and run them.
 
+# Screenshots
+
+![image](https://user-images.githubusercontent.com/1910659/133099604-836461b8-8f8a-4829-a3c3-6f364deea554.png)
+
 # Prerequisites
 
 * .NET 5 SDK
@@ -33,6 +37,3 @@ and you should be able to type in programs and run them.
 
 # Known Issues
 
-The keyboard interrupt seems to run a bit too fast, resulting in a fast blinking cursor and space bar moving too much when 
-pressed. Delete also doesn't work, except for few times it does. Key mapping isn't complete and the Left Shift seems to 
-block the first two rows of keys. 
