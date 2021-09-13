@@ -22,10 +22,17 @@ namespace CS64.Core.Interface.Input
 
             _keyMapping.Add(SDL_Keycode.SDLK_LSHIFT, InputKeyEnum.LSHIFT);
             _keyMapping.Add(SDL_Keycode.SDLK_RSHIFT, InputKeyEnum.RSHIFT);
-            _keyMapping.Add(SDL_Keycode.SDLK_SEMICOLON, InputKeyEnum.SEMICOLON);
-            _keyMapping.Add(SDL_Keycode.SDLK_COMMA, InputKeyEnum.COMMA);
-            _keyMapping.Add(SDL_Keycode.SDLK_DECIMALSEPARATOR, InputKeyEnum.DECIMAL);
 
+            _keyMapping.Add(SDL_Keycode.SDLK_SEMICOLON, InputKeyEnum.COLON);
+            _keyMapping.Add(SDL_Keycode.SDLK_QUOTE, InputKeyEnum.SEMICOLON);
+            
+            _keyMapping.Add(SDL_Keycode.SDLK_COMMA, InputKeyEnum.COMMA);
+            _keyMapping.Add(SDL_Keycode.SDLK_PERIOD, InputKeyEnum.PERIOD);
+
+            _keyMapping.Add(SDL_Keycode.SDLK_HOME, InputKeyEnum.HOME);
+            _keyMapping.Add(SDL_Keycode.SDLK_END, InputKeyEnum.STOP);
+            _keyMapping.Add(SDL_Keycode.SDLK_ESCAPE, InputKeyEnum.RESTORE);
+            _keyMapping.Add(SDL_Keycode.SDLK_TAB, InputKeyEnum.CTRL);
 
             _keyMapping.Add(SDL_Keycode.SDLK_0, InputKeyEnum.D0);
             _keyMapping.Add(SDL_Keycode.SDLK_1, InputKeyEnum.D1);
@@ -40,7 +47,6 @@ namespace CS64.Core.Interface.Input
 
             _keyMapping.Add(SDL_Keycode.SDLK_KP_COLON, InputKeyEnum.COLON);
             _keyMapping.Add(SDL_Keycode.SDLK_KP_COMMA, InputKeyEnum.COMMA);
-            _keyMapping.Add(SDL_Keycode.SDLK_KP_DECIMAL, InputKeyEnum.DECIMAL);
             _keyMapping.Add(SDL_Keycode.SDLK_KP_EQUALS, InputKeyEnum.EQUALS);
 
             _keyMapping.Add(SDL_Keycode.SDLK_a, InputKeyEnum.A);

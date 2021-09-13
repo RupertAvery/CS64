@@ -32,7 +32,7 @@
         COMMODORE,
         LSHIFT,
         COMMA,
-        DECIMAL,
+        PERIOD,
         SLASH,
         RSHIFT,
         CURSOR_DOWN,

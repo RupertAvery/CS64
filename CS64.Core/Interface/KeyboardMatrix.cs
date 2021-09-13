@@ -21,7 +21,7 @@ namespace CS64.Core.Interface
                 InputKeyEnum.SEMICOLON, InputKeyEnum.ASTERISK, InputKeyEnum.POUND
             },
             {
-                InputKeyEnum.COMMA, InputKeyEnum.AT, InputKeyEnum.COLON, InputKeyEnum.DECIMAL, InputKeyEnum.MINUS,
+                InputKeyEnum.COMMA, InputKeyEnum.AT, InputKeyEnum.COLON, InputKeyEnum.PERIOD, InputKeyEnum.MINUS,
                 InputKeyEnum.L, InputKeyEnum.P, InputKeyEnum.PLUS
             },
             {
@@ -65,7 +65,7 @@ namespace CS64.Core.Interface
                 }
             }
 
-            // This is for quick conversion from the inverse of strobe position (0x01 to 0x80) to a column index lookup (0-7)
+            // This is for quick lookup from the inverse of strobe position (0x01 to 0x80) to a column index lookup (0-7)
             // Note that we create a 129-byte array, and most of it will be empty
 
             for (var i = 0; i < 8; i++)
