@@ -21,8 +21,11 @@ namespace CS64.Core.CPU
             log = new StringBuilder();
             Vic = new VICII(this);
             Sid = new SID(this);
-            Cia1 = new CIA() ;
+            Cia1 = new CIA();
             Cia2 = new CIA();
+            // TODO: Hack - without this the ROM does not set the video matrix to the correct value as it's disabled
+            // The C64 Debugger emulator seems to have this set to 0xFF by default, and is write-protected 
+            Cia2.Write(0x2, 0xFF);// enable write on port A
         }
 
 
@@ -121,10 +124,10 @@ namespace CS64.Core.CPU
             switch (PC)
             {
                 case 0xEA8E: // keyboard routine
-                {
-                    var x = 1;
-                    break;
-                }
+                    {
+                        var x = 1;
+                        break;
+                    }
             }
 
             var ins = BusRead(PC);
