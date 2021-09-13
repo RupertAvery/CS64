@@ -5,6 +5,8 @@ namespace CS64.Core.Video
 {
     //https://www.c64-wiki.com/wiki/CIA
 
+    // TODO: Interrupts, timers, everything
+
     public class CIA
     {
         public uint PortA { get; set; }
@@ -20,6 +22,7 @@ namespace CS64.Core.Video
         public Action<uint> PortBWrite { get; set; }
 
         public Action RequestInterrupt { get; set; }
+
         public CIA()
         {
         }
@@ -169,7 +172,20 @@ namespace CS64.Core.Video
                     shift_register = data;
                     break;
                 case 0xD:
-                    int_mask = data & 0b11111;
+                    // Bit 7: Source bit.
+                    // 0 = set bits 0..4 are clearing the according mask bit.
+                    // 1 = set bits 0..4 are setting the according mask bit.
+                    // If all bits 0..4 are cleared, there will be no change to the mask.
+                    if (((data >> 7) & 1) == 1)
+                    {
+                        // set bits
+                        int_mask |= (data & 0x1F);
+                    }
+                    else
+                    {
+                        int_mask &= (data & 0x1F) ^ 0xFF;
+                    }
+
                     break;
                 case 0xE:
                     timer_A_start = (byte)(data & 1);
@@ -341,6 +357,10 @@ namespace CS64.Core.Video
                             //TODO: 0b11 = Timer counts underflow of timer A if the CNT - pin is high
                             UpdateTimerB();
                         }
+                    }
+                    else
+                    {
+                        timer_A_start = 0;
                     }
                 }
             }
