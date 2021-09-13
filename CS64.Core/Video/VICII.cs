@@ -1,5 +1,6 @@
 ﻿using CS64.Core.CPU;
 using System;
+using System.Runtime.CompilerServices;
 
 namespace CS64.Core.Video
 {
@@ -83,12 +84,6 @@ namespace CS64.Core.Video
         }
 
         private uint den;
-        private uint text_lines;
-        private uint characters;
-        private uint first_line;
-        private uint last_line;
-        private uint first_x;
-        private uint last_x;
         private uint x_scroll;
         private uint y_scroll;
 
@@ -156,8 +151,9 @@ namespace CS64.Core.Video
                     video_mode |= ((value >> 4) & 0x6); // filter out lower bit
                     den = ((value >> 4) & 0x1);
                     y_scroll = value & 7;
+                    raster_comparator |= ((value & 0x80) << 1);
                     break;
-                case 0x12: raster_comparator = value; break;
+                case 0x12: raster_comparator |= value & 0xFF; break;
                 //case 0x13: var x = 1; break;// LightPenX ; // Read only 
                 //case 0x14: var y = 1; break;// LightPenY ; 
                 case 0x15: sprite_enabled = value; break;
@@ -232,13 +228,26 @@ namespace CS64.Core.Video
             {
                 0x12 => raster_line,
                 0x18 => (video_matrix << 4) | (character_generator << 1),
-                0x19 => interrupt_register,
+                //The bit 7 in the latch $d019 reflects the inverted state of the IRQ output
+                //    of the VIC.
+                0x19 => ReadInterrupts(),
+                0x1A => interrupt_enabled,
+                0x21 => background_color0,
                 _ => throw new AccessViolationException()
             };
             return data;
         }
 
         private bool den_frame_set;
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private uint ReadInterrupts()
+        {
+            // reading from the register clears it (acknowledge)
+            var temp = interrupt_register;
+            interrupt_register = 0;
+            return temp;
+        }
 
         public uint VicRead(uint address)
         {
@@ -547,9 +556,21 @@ namespace CS64.Core.Video
                 // and define the beginning of raster line 0 to be one cycle before the
                 // occurrence of the IRQ.
 
-                _c64.TriggerInterrupt(InterruptTypeEnum.IRQ);
+
                 cycle = 1;
                 raster_line++;
+
+                if (raster_line == raster_comparator)
+                {
+                    if (true || (interrupt_enabled & 1) == 1)
+                    {
+                        //The bit 7 in the latch $d019 reflects the inverted state of the IRQ output
+                        //    of the VIC.
+
+                        interrupt_register |= 0x1;
+                        _c64.TriggerInterrupt(InterruptTypeEnum.IRQ);
+                    }
+                }
 
                 // hack - when should we clear BLC?
                 bad_line_condition = false;
