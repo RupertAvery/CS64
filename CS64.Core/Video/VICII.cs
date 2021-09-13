@@ -14,12 +14,15 @@ namespace CS64.Core.Video
         // 6567R8  | NTSC-M |  263  |   235   |   65    |    418
         //  6569   |  PAL-B |  312  |   284   |   63    |    403
 
-        private uint CyclesPerLine = 64;
+        private uint CyclesPerLine = 63;
         private uint MaxLines = 312;
-        private uint VisibleLines = 234;
 
-        public int Width = 403;
-        public int Height = 284;
+        // Hack: Not sure about these values, just tweaked to lessen the top and right borders
+        private const int HBlank = 24;
+        private const int StartRaster = 16;
+
+        public int Width = 403 - HBlank;
+        public int Height = 284 - StartRaster;
 
         public uint[] buffer;
         private uint[] video_matrix_line = new uint[40];
@@ -457,7 +460,7 @@ namespace CS64.Core.Video
 
             }
 
-            var y = raster_line;
+            var y = raster_line - StartRaster;
 
             var c_color = color_line[video_matrix_line_index > 39 ? 0 : video_matrix_line_index];
 
@@ -465,6 +468,7 @@ namespace CS64.Core.Video
             {
                 for (var i = 0; i < 8; i++)
                 {
+                    // Some magic offset
                     var x = (cycle - 13) * 8 + i;
 
                     if ((x <= Width - 1))
@@ -497,19 +501,19 @@ namespace CS64.Core.Video
                         {
                             main_border = true;
                         }
-                        if (y == border_bottom && cycle == CyclesPerLine)
+                        if (y == border_bottom - StartRaster && cycle == CyclesPerLine)
                         {
                             vertical_border = true;
                         }
-                        if (y == border_top && den == 1)
+                        if (y == border_top - StartRaster && den == 1)
                         {
                             vertical_border = false;
                         }
-                        if (x == border_left && y == border_bottom)
+                        if (x == border_left && y == border_bottom - StartRaster)
                         {
                             vertical_border = true;
                         }
-                        if (x == border_left && y == border_top && den == 1)
+                        if (x == border_left && y == border_top - StartRaster && den == 1)
                         {
                             vertical_border = false;
                         }
@@ -578,7 +582,8 @@ namespace CS64.Core.Video
                 if (raster_line >= MaxLines)
                 {
                     raster_line = 0;
-                    // SHould this be here?
+
+                    // Should this be here?
                     den_frame_set = false;
 
                     video_counter_base = 0;
