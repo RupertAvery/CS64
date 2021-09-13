@@ -12,18 +12,23 @@ and you should be able to type in programs and run them.
 
 # Todo
 
+* Fix keyboard mappings and multiple-presses (LSHIFT)
 * Fix video display (remove excessive borders)
 * Graphics modes and sprites
-* Work on interrupts
+* Fix interrupts
+* Test timers
 * States
 * Rewind
+* Light Pen
 * Tape I/O
 * Disk I/O
-* Sound (Probably not, might use another emulator's sound eventually)
+* SID (Probably not, might use another emulator's SID implementation, or reSID)
 
 # Key mapping
 
-In progress...
+|  Key    |  Function    |
+|---------|--------------|
+|  F10    |  Reset       |
 
 
 # Known Issues

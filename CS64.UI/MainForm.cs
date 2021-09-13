@@ -108,7 +108,7 @@ namespace CS64.UI
 
         private void openToolStripMenuItem_Click(object sender, EventArgs e)
         {
-            openFileDialog1.Filter = "All supported files|*.nes;*.zip|All files|*.*";
+            openFileDialog1.Filter = "All supported files|*.t64;*.d64;*.prg;*.zip|All files|*.*";
             var result = openFileDialog1.ShowDialog();
             if (result == DialogResult.OK)
             {

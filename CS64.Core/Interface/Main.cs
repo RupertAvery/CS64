@@ -258,6 +258,7 @@ namespace CS64.Core.Interface
                     }
                     else
                     {
+                        KeyPressed = false;
                         _keyboardMatrix.TryEncode(args.Key, out var rowCol);
                         var index = _keyboardMatrix.ColumnIndex[rowCol.Col];
                         rowCols[index] = 0;
