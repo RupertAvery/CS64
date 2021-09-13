@@ -26,9 +26,6 @@ namespace CS64.Core.CPU
             Cia1.RequestInterrupt = () => TriggerInterrupt(InterruptTypeEnum.IRQ);
 
             Cia2 = new CIA();
-            // TODO: Hack - without this the ROM does not set the video matrix to the correct value as it's disabled
-            // The C64 Debugger emulator seems to have this set to 0xFF by default, and is write-protected 
-            Cia2.Write(0x2, 0xFF);// enable write on port A
         }
 
 

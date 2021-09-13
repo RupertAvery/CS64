@@ -12,6 +12,8 @@ namespace CS64.Core.Video
         public uint PortA { get; set; }
         public uint PortB { get; set; }
         // Bit X: 0=Input (read only), 1=Output (read and write)
+        private uint latch_a;
+        private uint latch_b;
         private uint readwrite_mask_a;
         private uint readwrite_mask_b;
 
@@ -64,6 +66,32 @@ namespace CS64.Core.Video
             return temp;
         }
 
+        private void UpdatePortA()
+        {
+            var output = latch_a | (readwrite_mask_a ^ 0xFF);
+            if (PortAWrite != null)
+            {
+                PortAWrite(output);
+            }
+            else
+            {
+                PortA = output;
+            }
+        }
+
+        private void UpdatePortB()
+        {
+            var output = latch_b | (readwrite_mask_b ^ 0xFF);
+            if (PortBWrite != null)
+            {
+                PortBWrite(output);
+            }
+            else
+            {
+                PortB = output;
+            }
+        }
+
         public void Write(uint address, uint data)
         {
             address &= 0x0F; // Mirror every 16 address bytes
@@ -71,39 +99,47 @@ namespace CS64.Core.Video
             switch (address)
             {
                 case 0x0:
+                    latch_a = data;
+                    UpdatePortA();
+
                     // mask the incoming data bits
-                    data &= readwrite_mask_a;
+                    //data &= readwrite_mask_a;
+
                     // preserve the existing bits with an inverse of the mask
-                    if (PortAWrite != null)
-                    {
-                        PortAWrite(data);
-                    }
-                    else
-                    {
-                        PortA &= readwrite_mask_a ^ 0xFF;
-                        // merge the data
-                        PortA |= data;
-                    }
+                    //if (PortAWrite != null)
+                    //{
+                    //    PortAWrite(data);
+                    //}
+                    //else
+                    //{
+                    //    PortA &= readwrite_mask_a ^ 0xFF;
+                    //    // merge the data
+                    //    PortA |= data;
+                    //}
 
                     break;
                 case 0x1:
-                    data &= readwrite_mask_b;
-                    if (PortBWrite != null)
-                    {
-                        PortBWrite(data);
-                    }
-                    else
-                    {
-                        PortB &= readwrite_mask_b ^ 0xFF;
-                        PortB |= data;
-                    }
+                    latch_b = data;
+                    UpdatePortB();
+                    //data &= readwrite_mask_b;
+                    //if (PortBWrite != null)
+                    //{
+                    //    PortBWrite(data);
+                    //}
+                    //else
+                    //{
+                    //    PortB &= readwrite_mask_b ^ 0xFF;
+                    //    PortB |= data;
+                    //}
 
                     break;
                 case 0x2:
                     readwrite_mask_a = data;
+                    UpdatePortA();
                     break;
                 case 0x3:
                     readwrite_mask_b = data;
+                    UpdatePortB();
                     break;
                 case 0x4:
                     timer_A_latch |= (int)data;

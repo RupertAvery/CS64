@@ -125,7 +125,7 @@ namespace CS64.Core.CPU
             I = 1;
             Cycles = 7; // takes 7 cycles to reset
             
-            IO_Port_DR = 0x1F; // enable KERNAL, I/O, BASIC
+            //IO_Port_DR = 0x1F; // enable KERNAL, I/O, BASIC
 
             _instructionCyclesLeft = 0;
             dma_page = 0;
@@ -152,30 +152,39 @@ namespace CS64.Core.CPU
             return data;
         }
 
-        public void BusWrite(uint address, uint value)
+        public void BusWrite(uint address, uint data)
         {
             switch (address)
             {
                 case >= 0xD000 and <= 0xDFFF:
-                    CharROMWrite(address, value);
+                    CharROMWrite(address, data);
                     break;
                 case 0x0001:
-                    value &= IO_Port_DDR;
-                    IO_Port_DR &= IO_Port_DDR ^ 0xFF;
-                    IO_Port_DR |= value;
+                    _io_port = data;
+                    UpdateIOPort();
+                    //data &= IO_Port_DDR;
+                    //IO_Port_DR &= IO_Port_DDR ^ 0xFF;
+                    //IO_Port_DR |= data;
                     break;
                 case 0x0000:
-                    IO_Port_DDR = value;
+                    IO_Port_DDR = data;
+                    UpdateIOPort();
                     break;
                 case >= 0 and <= 0xFFFF:
                     // fall through to RAM
-                    RAM[address] = (byte)value;
+                    RAM[address] = (byte)data;
                     break;
             }
         }
 
+        private void UpdateIOPort()
+        {
+            IO_Port_DR = _io_port | (IO_Port_DDR ^ 0xFF);
+        }
+
         // https://www.c64-wiki.com/wiki/Bank_Switching
 
+        private uint _io_port;
         //data direction register
         public uint IO_Port_DDR;
         //data register
