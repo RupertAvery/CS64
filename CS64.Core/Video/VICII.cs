@@ -1,17 +1,8 @@
 ﻿using CS64.Core.CPU;
 using System;
-using System.Collections.Generic;
-using System.Net.Sockets;
-using System.Text;
 
 namespace CS64.Core.Video
 {
-    public enum StateEnum
-    {
-        IdleState,
-        DisplayState
-    }
-
     //http://www.zimmers.net/cbmpics/cbm/c64/vic-ii.txt
     public class VICII
     {
@@ -30,25 +21,40 @@ namespace CS64.Core.Video
         public int Height = 284;
 
         public uint[] buffer;
-        public uint[] register = new uint[47];
-        public uint[] video_matrix_line = new uint[40];
-        public uint[] color_line = new uint[40];
-        public uint video_matrix;
-        public uint CB;
-        public uint chargen;
+        private uint[] video_matrix_line = new uint[40];
+        private uint[] color_line = new uint[40];
+        private uint video_matrix;
+        // called CB in documentation
+        private uint character_generator; 
 
-        private MC6502State _c64;
+        private readonly MC6502State _c64;
 
-        public uint video_counter;
-        public uint video_counter_base;
-        public uint row_counter;
-        public uint video_matrix_line_index;
+        private uint video_counter;
+        private uint video_counter_base;
+        private uint row_counter;
+        private uint video_matrix_line_index;
 
-        //private uint[] video_matrix = new uint[40 * 25];
+        private uint raster_line;
+        private uint cycle = 1;
+        private bool bad_line_condition;
 
-        // https://lospec.com/palette-list/colodore
-        //http://unusedino.de/ec64/technical/misc/vic656x/colors/
-        //https://www.pepto.de/projects/colorvic/
+        private uint g_data;
+        private StateEnum state;
+
+        private uint r_sel;
+        private uint c_sel;
+
+        private uint border_left = 31;
+        private uint border_right = 335;
+        private uint border_top = 55;
+        private uint border_bottom = 247;
+
+        // flip-flops
+        private bool main_border;
+        private bool vertical_border;
+
+        public uint cycles;
+
 
         public uint[] palette =
         {
@@ -125,12 +131,10 @@ namespace CS64.Core.Video
         {
             address &= 0x3F;
 
-            register[address] = (byte)value;
-
             switch (address)
             {
                 case 0x11:
-                    r_sel= (value & 0x8) >> 3;
+                    r_sel = (value & 0x8) >> 3;
 
                     if (r_sel == 0)
                     {
@@ -179,9 +183,8 @@ namespace CS64.Core.Video
                     break;
                 case 0x17: sprite_y_expansion = value; break;
                 case 0x18:
-                    // VM13|VM12|VM11|VM10|CB13|CB12|CB11|  - 
                     video_matrix = (value >> 4) & 0xF;
-                    CB = (value >> 1) & 0x7;
+                    character_generator = (value >> 1) & 0x7;
                     break;
                 case 0x19: interrupt_register = value; break;
                 case 0x1A: interrupt_enabled = value; break;
@@ -228,7 +231,7 @@ namespace CS64.Core.Video
             uint data = address switch
             {
                 0x12 => raster_line,
-                0x18 => (video_matrix << 4) | (CB << 1),
+                0x18 => (video_matrix << 4) | (character_generator << 1),
                 0x19 => interrupt_register,
                 _ => throw new AccessViolationException()
             };
@@ -257,16 +260,7 @@ namespace CS64.Core.Video
             return data;
         }
 
-        private uint raster_line;
-        private uint cycle = 1;
-        private bool bad_line_condition;
 
-        private bool enable_c_access;
-
-        //private uint c_color;
-        //private uint c_data;
-        private uint g_data;
-        private StateEnum state;
         public void Clock()
         {
             //         | Video  | # of  | Visible | Cycles/ |  Visible
@@ -316,7 +310,7 @@ namespace CS64.Core.Video
                 if (bad_line_condition)
                 {
                     // d018 |VM13|VM12|VM11|VM10|CB13|CB12|CB11|  - | Memory pointers
-                    var address =  video_matrix << 10;
+                    var address = video_matrix << 10;
                     address |= video_counter;
 
                     //The read data is stored
@@ -336,7 +330,7 @@ namespace CS64.Core.Video
                 // TEST: Display incrementing data to show character set
                 //c_data = video_counter;
 
-                var address = (CB << 11) | (c_data << 3) | (row_counter & 7);
+                var address = (character_generator << 11) | (c_data << 3) | (row_counter & 7);
                 g_data = VicRead(address);
                 if (state == StateEnum.DisplayState)
                 {
@@ -346,15 +340,6 @@ namespace CS64.Core.Video
                 }
             }
 
-            // First few odd cycles of the raster line access sprite data 3 - 9
-            if (cycle <= 9)
-            {
-                if (cycle % 2 == 1)
-                {
-                    var spr = 3 + (cycle - 1) / 2;
-                    p_access(spr);
-                }
-            }
 
             //As long as register $d011 is not modified in the middle of a frame, the
             //display logic is in display state within the display window and in idle
@@ -362,7 +347,7 @@ namespace CS64.Core.Video
             //window and store a value not equal to zero in $3fff you can see the stripes
             //generated by the sequencer in idle state on the upper or lower side of the
             //window.
-            
+
             if (raster_line == 0x30 && den == 1)
             {
                 den_frame_set = true;
@@ -373,8 +358,6 @@ namespace CS64.Core.Video
             //<= $f7 and the lower three bits of RASTER are equal to YSCROLL and if the
             //DEN bit was set during an arbitrary cycle of raster line $30.
 
-
-            // TEST: REMOVE
 
             if (raster_line >= 0x30 && raster_line <= 0xF7 && ((raster_line & 7) == y_scroll) && den_frame_set)
             {
@@ -388,7 +371,6 @@ namespace CS64.Core.Video
             if (cycle >= 12 && cycle <= 54 && bad_line_condition)
             {
                 _c64.BusAvailable = false;
-                enable_c_access = true;
             }
 
 
@@ -396,160 +378,163 @@ namespace CS64.Core.Video
             //(VCBASE->VC) and VMLI is cleared.If there is a Bad Line Condition in
             //this phase, RC is also reset to zero.
 
-            if (cycle == 14)
+            switch (cycle)
             {
-                video_counter = video_counter_base;
-                video_matrix_line_index = 0;
-                if (bad_line_condition)
-                {
-                    row_counter = 0;
-                }
+                // First few odd cycles of the raster line access sprite data 3 - 9
+                case <= 9:
+                    {
+                        if (cycle % 2 == 1)
+                        {
+                            var spr = 3 + (cycle - 1) / 2;
+                            p_access(spr);
+                        }
+                    }
+                    break;
+                // cycle 15 preemptively loads character data for the first column
+                case 14:
+                    {
+                        video_counter = video_counter_base;
+                        video_matrix_line_index = 0;
+                        if (bad_line_condition)
+                        {
+                            row_counter = 0;
+                        }
+
+                        break;
+                    }
+                // visible cycles access the current character generator data, and data for the next column
+                case 15:
+                    c_access();
+                    break;
+                case >= 16 and <= 54:
+                    g_access();
+                    c_access();
+                    break;
+                case 55:
+                    g_access();
+                    break;
+                case 58:
+                    {
+                        // not sure when this is supposed to happen
+                        _c64.BusAvailable = true;
+
+                        // In the first phase of cycle 58, the VIC checks if RC = 7.If so, the video
+                        // logic goes to idle state and VCBASE is loaded from VC(VC->VCBASE)
+                        if (row_counter == 7)
+                        {
+                            video_counter_base = video_counter;
+                            state = StateEnum.IdleState;
+                        }
+                        if (state == StateEnum.DisplayState)
+                        {
+                            // . If the video logic is in display state afterwards(this is always the case
+                            // if there is a Bad Line Condition), RC is incremented.
+                            row_counter++;
+                        }
+
+                        var spr = (cycle - 58) / 2;
+                        p_access(spr);
+
+                        break;
+                    }
+                // cycles 58, 60 and 62 access sprite 0, 1 & 2
+                case 60:
+                case 62:
+                    {
+                        var spr = (cycle - 58) / 2;
+                        p_access(spr);
+                    }
+                    break;
+
             }
-
-            // cycle 15 preemptively loads character data for the first column
-            if (cycle == 15)
-            {
-                c_access();
-            }
-
-            // visible cycles access the current character generator data, and data for the next column
-            if (cycle >= 16 && cycle <= 54)
-            {
-                g_access();
-                c_access();
-            }
-
-            // last one
-            if (cycle == 55)
-            {
-                g_access();
-            }
-
-            if (cycle == 58)
-            {
-                // not sure when this is supposed to happen
-                _c64.BusAvailable = true;
-
-                // In the first phase of cycle 58, the VIC checks if RC = 7.If so, the video
-                // logic goes to idle state and VCBASE is loaded from VC(VC->VCBASE)
-                if (row_counter == 7)
-                {
-                    video_counter_base = video_counter;
-                    state = StateEnum.IdleState;
-                }
-                if (state == StateEnum.DisplayState)
-                {
-                    // . If the video logic is in display state afterwards(this is always the case
-                    // if there is a Bad Line Condition), RC is incremented.
-                    row_counter++;
-                }
-
-            }
-
-            // cycles 58, 60 and 62 access sprite 0, 1 & 2
-            if (cycle == 58 || cycle == 60 || cycle == 62)
-            {
-                var spr = (cycle - 58) / 2;
-                p_access(spr);
-            }
-
-            //48 && 247
-
 
             var y = raster_line;
 
             var c_color = color_line[video_matrix_line_index > 39 ? 0 : video_matrix_line_index];
 
-            for (var i = 0; i < 8; i++)
+            if (y <= Height - 1)
             {
-                var x = (cycle - 13) * 8 + i;
-
-                if ((x <= Width - 1) && (y <= Height - 1))
+                for (var i = 0; i < 8; i++)
                 {
-                    //There are 2×2 comparators belonging to each of the two flip flops. There
-                    //comparators compare the X/Y position of the raster beam with one of two
-                    //hardwired values (depending on the state of the CSEL/RSEL bits) to control
-                    //the flip flops. The comparisons only match if the values are reached
-                    //precisely. There is no comparison with an interval.
+                    var x = (cycle - 13) * 8 + i;
+
+                    if ((x <= Width - 1))
+                    {
+                        //There are 2×2 comparators belonging to each of the two flip flops. There
+                        //comparators compare the X/Y position of the raster beam with one of two
+                        //hardwired values (depending on the state of the CSEL/RSEL bits) to control
+                        //the flip flops. The comparisons only match if the values are reached
+                        //precisely. There is no comparison with an interval.
 
 
-                    //The flip flops are switched according to the following rules:
+                        //The flip flops are switched according to the following rules:
 
-                    //1. If the X coordinate reaches the right comparison value, the main border
-                    //   flip flop is set.
-                    //2. If the Y coordinate reaches the bottom comparison value in cycle 63, the
-                    //   vertical border flip flop is set.
-                    //3. If the Y coordinate reaches the top comparison value in cycle 63 and the
-                    //   DEN bit in register $d011 is set, the vertical border flip flop is
-                    //   reset.
-                    //4. If the X coordinate reaches the left comparison value and the Y
-                    //   coordinate reaches the bottom one, the vertical border flip flop is set.
-                    //5. If the X coordinate reaches the left comparison value and the Y
-                    //   coordinate reaches the top one and the DEN bit in register $d011 is set,
-                    //   the vertical border flip flop is reset.
-                    //6. If the X coordinate reaches the left comparison value and the vertical
-                    //   border flip flop is not set, the main flip flop is reset.
+                        //1. If the X coordinate reaches the right comparison value, the main border
+                        //   flip flop is set.
+                        //2. If the Y coordinate reaches the bottom comparison value in cycle 63, the
+                        //   vertical border flip flop is set.
+                        //3. If the Y coordinate reaches the top comparison value in cycle 63 and the
+                        //   DEN bit in register $d011 is set, the vertical border flip flop is
+                        //   reset.
+                        //4. If the X coordinate reaches the left comparison value and the Y
+                        //   coordinate reaches the bottom one, the vertical border flip flop is set.
+                        //5. If the X coordinate reaches the left comparison value and the Y
+                        //   coordinate reaches the top one and the DEN bit in register $d011 is set,
+                        //   the vertical border flip flop is reset.
+                        //6. If the X coordinate reaches the left comparison value and the vertical
+                        //   border flip flop is not set, the main flip flop is reset.
 
-                    if (x == border_right)
-                    {
-                        main_border = true;
-                    }
-                    if (y == border_bottom && cycle == CyclesPerLine)
-                    {
-                        vertical_border = true;
-                    }
-                    if (y == border_top && den == 1)
-                    {
-                        vertical_border = false;
-                    }
-                    if (x == border_left && y == border_bottom)
-                    {
-                        vertical_border = true;
-                    }
-                    if (x == border_left && y == border_top && den == 1)
-                    {
-                        vertical_border = false;
-                    }
-                    if (x == border_left && !vertical_border)
-                    {
-                        main_border = false;
-                    }
-
-                    //So the Y coordinate is checked once or twice within each raster line: In
-                    //cycle 63 and if the X coordinate reaches the left comparison value.
-
-                    if (main_border || vertical_border)
-                    {
-                        buffer[x + y * Width] = palette[border_color];
-                    }
-                    else
-                    {
-                        if (state == StateEnum.DisplayState)
+                        if (x == border_right)
                         {
-                            buffer[x + y * Width] = ((g_data >> (7 - i)) & 1) == 0
-                                ? palette[background_color0]
-                                : palette[c_color];
+                            main_border = true;
                         }
-                        else
+                        if (y == border_bottom && cycle == CyclesPerLine)
+                        {
+                            vertical_border = true;
+                        }
+                        if (y == border_top && den == 1)
+                        {
+                            vertical_border = false;
+                        }
+                        if (x == border_left && y == border_bottom)
+                        {
+                            vertical_border = true;
+                        }
+                        if (x == border_left && y == border_top && den == 1)
+                        {
+                            vertical_border = false;
+                        }
+                        if (x == border_left && !vertical_border)
+                        {
+                            main_border = false;
+                        }
+
+                        //So the Y coordinate is checked once or twice within each raster line: In
+                        //cycle 63 and if the X coordinate reaches the left comparison value.
+
+                        if (main_border || vertical_border)
                         {
                             buffer[x + y * Width] = palette[border_color];
                         }
-                    }
+                        else
+                        {
+                            if (state == StateEnum.DisplayState)
+                            {
+                                buffer[x + y * Width] = ((g_data >> (7 - i)) & 1) == 0
+                                    ? palette[background_color0]
+                                    : palette[c_color];
+                            }
+                            else
+                            {
+                                buffer[x + y * Width] = palette[border_color];
+                            }
+                        }
 
+                    }
                 }
             }
 
-            //if (cycle >= 16 && cycle <= 55 && raster_line >= 48 && raster_line <= 247)
-            ////if (cycle >= 16 && cycle <= 55 && raster_line >= 48 && raster_line <= 247)
-            //{
-            //}
-
             cycle++;
-
-            //if (cycle == 65)
-            //{
-            //    cycle = 0;
-            //}
 
             if (cycle >= CyclesPerLine)
             {
@@ -562,9 +547,10 @@ namespace CS64.Core.Video
                 // and define the beginning of raster line 0 to be one cycle before the
                 // occurrence of the IRQ.
 
-               _c64.TriggerInterrupt(InterruptTypeEnum.IRQ);
+                _c64.TriggerInterrupt(InterruptTypeEnum.IRQ);
                 cycle = 1;
                 raster_line++;
+
                 // hack - when should we clear BLC?
                 bad_line_condition = false;
 
@@ -575,7 +561,6 @@ namespace CS64.Core.Video
                     den_frame_set = false;
 
                     video_counter_base = 0;
-                    enable_c_access = false;
                 }
             }
 
@@ -583,20 +568,5 @@ namespace CS64.Core.Video
 
         }
 
-        private uint r_sel;
-        private uint c_sel;
-
-        private uint border_left = 31;
-        private uint border_right = 335;
-        private uint border_top = 55;
-        private uint border_bottom = 247;
-
-        // flip-flops
-        private bool main_border;
-        private bool vertical_border;
-
-        public uint cycles;
-        private int dot;
-        private int scanline;
     }
 }

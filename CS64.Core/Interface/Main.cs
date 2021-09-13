@@ -350,6 +350,10 @@ namespace CS64.Core.Interface
                     }
 
                     Render();
+
+                    _c64.Cia1.TimeOfDay();
+                    _c64.Cia1.TimeOfDay();
+
                 }
                 catch (Exception e)
                 {
@@ -576,7 +580,7 @@ namespace CS64.Core.Interface
         {
             SDL_SetWindowTitle(
                 _videoProvider.Window,
-                "Fami - " + _fps + " fps" + _audioProvider.GetAudioSamplesInQueue() + " samples queued"
+                "CS64 - " + _fps + " fps" + _audioProvider.GetAudioSamplesInQueue() + " samples queued"
             );
         }
 

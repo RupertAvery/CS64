@@ -39,7 +39,9 @@ namespace CS64.Core.CPU
             {
                 ClockCpu();
             }
-
+            // TODO: is the counter driven by the CPU clock?
+            Cia1.Clock();
+            Cia2.Clock();
 
             int s = Sid.EmitSample();
 
@@ -56,6 +58,10 @@ namespace CS64.Core.CPU
 
         private void ClockCpu()
         {
+            // TODO: is the counter driven by the CPU clock?
+            Cia1.Count();
+            Cia2.Count();
+
             if (_instructionCyclesLeft-- > 0)
             {
                 return;
