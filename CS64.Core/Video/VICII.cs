@@ -566,11 +566,10 @@ namespace CS64.Core.Video
 
                 if (raster_line == raster_comparator)
                 {
-                    if (true || (interrupt_enabled & 1) == 1)
+                    if ((interrupt_enabled & 1) == 1)
                     {
                         //The bit 7 in the latch $d019 reflects the inverted state of the IRQ output
                         //    of the VIC.
-
                         interrupt_register |= 0x1;
                         _c64.TriggerInterrupt(InterruptTypeEnum.IRQ);
                     }

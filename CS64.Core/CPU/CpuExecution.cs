@@ -22,6 +22,9 @@ namespace CS64.Core.CPU
             Vic = new VICII(this);
             Sid = new SID(this);
             Cia1 = new CIA();
+
+            Cia1.RequestInterrupt = () => TriggerInterrupt(InterruptTypeEnum.IRQ);
+
             Cia2 = new CIA();
             // TODO: Hack - without this the ROM does not set the video matrix to the correct value as it's disabled
             // The C64 Debugger emulator seems to have this set to 0xFF by default, and is write-protected 
@@ -35,6 +38,8 @@ namespace CS64.Core.CPU
             blip.SetRates((uint)cpuclockrate, 44100);
         }
 
+        private int divider;
+
         public uint Step()
         {
             Vic.Clock();
@@ -42,9 +47,15 @@ namespace CS64.Core.CPU
             {
                 ClockCpu();
             }
+
+            divider++;
             // TODO: is the counter driven by the CPU clock?
-            Cia1.Clock();
-            Cia2.Clock();
+            if (divider == 8)
+            {
+                divider = 0;
+                Cia1.Clock();
+                Cia2.Clock();
+            }
 
             int s = Sid.EmitSample();
 
