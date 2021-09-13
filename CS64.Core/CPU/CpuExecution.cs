@@ -21,9 +21,10 @@ namespace CS64.Core.CPU
             log = new StringBuilder();
             Vic = new VICII(this);
             Sid = new SID(this);
-            Cia1 = new CIA(0xDC00);
-            Cia2 = new CIA(0xDD00);
+            Cia1 = new CIA() ;
+            Cia2 = new CIA();
         }
+
 
         public void Init()
         {
@@ -113,10 +114,7 @@ namespace CS64.Core.CPU
 
             switch (PC)
             {
-                // LDA 7F
-                // STA DC00
-                case 0xFDAB:
-                case 0xFDD9:
+                case 0xEA8E: // keyboard routine
                 {
                     var x = 1;
                     break;

@@ -15,40 +15,40 @@ namespace CS64.UI
             InitializeComponent();
         }
         
-        private void ShowMapping(ControllerButtonEnum button)
+        private void ShowMapping(InputKeyEnum key)
         {
-            _main.SetMapping(button);
-            var mapWait = new MapWaitForm(_main.InputProvider, button);
+            _main.SetMapping(key);
+            var mapWait = new MapWaitForm(_main.InputProvider, key);
             mapWait.Top = Top + (Height - mapWait.Height) / 2;
             mapWait.Left = Left + (Width - mapWait.Width) / 2;
             mapWait.ShowDialog(this);
         }
 
-        private void GetMapping(ControllerButtonEnum button, TextBox textbox)
+        private void GetMapping(InputKeyEnum key, TextBox textbox)
         {
-            textbox.Text = _main.InputProvider.GetMapping(button);
+            textbox.Text = _main.InputProvider.GetMapping(key);
         }
 
         private void MappingForm_Load(object sender, EventArgs e)
         {
-            GetMapping(ControllerButtonEnum.Up, textBoxUp);
-            GetMapping(ControllerButtonEnum.Down, textBoxDown);
-            GetMapping(ControllerButtonEnum.Left, textBoxLeft);
-            GetMapping(ControllerButtonEnum.Right, textBoxRight);
-            GetMapping(ControllerButtonEnum.B, textBoxB);
-            GetMapping(ControllerButtonEnum.A, textBoxA);
-            GetMapping(ControllerButtonEnum.Select, textBoxSelect);
-            GetMapping(ControllerButtonEnum.Start, textBoxStart);
+            //GetMapping(InputKeyEnum.Up, textBoxUp);
+            //GetMapping(InputKeyEnum.Down, textBoxDown);
+            //GetMapping(InputKeyEnum.Left, textBoxLeft);
+            //GetMapping(InputKeyEnum.Right, textBoxRight);
+            //GetMapping(InputKeyEnum.B, textBoxB);
+            //GetMapping(InputKeyEnum.A, textBoxA);
+            //GetMapping(InputKeyEnum.Select, textBoxSelect);
+            //GetMapping(InputKeyEnum.Start, textBoxStart);
 
 
-            buttonUp.Click += (o, e) => { ShowMapping(ControllerButtonEnum.Up); GetMapping(ControllerButtonEnum.Up, textBoxUp); };
-            buttonDown.Click += (o, e) => { ShowMapping(ControllerButtonEnum.Down); GetMapping(ControllerButtonEnum.Down, textBoxDown); };
-            buttonLeft.Click += (o, e) => { ShowMapping(ControllerButtonEnum.Left); GetMapping(ControllerButtonEnum.Left, textBoxLeft); };
-            buttonRight.Click += (o, e) => { ShowMapping(ControllerButtonEnum.Right); GetMapping(ControllerButtonEnum.Right, textBoxRight); };
-            buttonB.Click += (o, e) => { ShowMapping(ControllerButtonEnum.B); GetMapping(ControllerButtonEnum.B, textBoxB); };
-            buttonA.Click += (o, e) => { ShowMapping(ControllerButtonEnum.A); GetMapping(ControllerButtonEnum.A, textBoxA); };
-            buttonSelect.Click += (o, e) => { ShowMapping(ControllerButtonEnum.Select); GetMapping(ControllerButtonEnum.Select, textBoxSelect); };
-            buttonStart.Click += (o, e) => { ShowMapping(ControllerButtonEnum.Start); GetMapping(ControllerButtonEnum.Start, textBoxStart); };
+            //buttonUp.Click += (o, e) => { ShowMapping(InputKeyEnum.Up); GetMapping(InputKeyEnum.Up, textBoxUp); };
+            //buttonDown.Click += (o, e) => { ShowMapping(InputKeyEnum.Down); GetMapping(InputKeyEnum.Down, textBoxDown); };
+            //buttonLeft.Click += (o, e) => { ShowMapping(InputKeyEnum.Left); GetMapping(InputKeyEnum.Left, textBoxLeft); };
+            //buttonRight.Click += (o, e) => { ShowMapping(InputKeyEnum.Right); GetMapping(InputKeyEnum.Right, textBoxRight); };
+            //buttonB.Click += (o, e) => { ShowMapping(InputKeyEnum.B); GetMapping(InputKeyEnum.B, textBoxB); };
+            //buttonA.Click += (o, e) => { ShowMapping(InputKeyEnum.A); GetMapping(InputKeyEnum.A, textBoxA); };
+            //buttonSelect.Click += (o, e) => { ShowMapping(InputKeyEnum.Select); GetMapping(InputKeyEnum.Select, textBoxSelect); };
+            //buttonStart.Click += (o, e) => { ShowMapping(InputKeyEnum.Start); GetMapping(InputKeyEnum.Start, textBoxStart); };
         }
     }
 }

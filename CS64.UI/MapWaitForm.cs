@@ -9,15 +9,15 @@ namespace CS64.UI
     public partial class MapWaitForm : Form
     {
         private readonly InputProvider _inputProvider;
-        private readonly ControllerButtonEnum _button;
+        private readonly InputKeyEnum _key;
         private System.Threading.Timer timer;
         private int countDown;
         public bool Success { get; set; }
 
-        public MapWaitForm(InputProvider inputProvider, ControllerButtonEnum button)
+        public MapWaitForm(InputProvider inputProvider, InputKeyEnum key)
         {
             _inputProvider = inputProvider;
-            _button = button;
+            _key = key;
             Closing += (sender, args) =>
             {
                 timer.Change(Timeout.Infinite, Timeout.Infinite);

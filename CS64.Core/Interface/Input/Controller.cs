@@ -10,25 +10,25 @@ namespace CS64.Core.Interface.Input
         private IntPtr joystick;
         private int instanceId;
 
-        private readonly Dictionary<int, ControllerButtonEnum> _buttonMapping = new Dictionary<int, ControllerButtonEnum>();
+        private readonly Dictionary<int, InputKeyEnum> _buttonMapping = new Dictionary<int, InputKeyEnum>();
         
         public int ControllerIndex { get; set; }
 
         public Controller()
         {
-            _buttonMapping.Add(11, ControllerButtonEnum.Up);
-            _buttonMapping.Add(12, ControllerButtonEnum.Down);
-            _buttonMapping.Add(13, ControllerButtonEnum.Left);
-            _buttonMapping.Add(14, ControllerButtonEnum.Right);
-            _buttonMapping.Add(3, ControllerButtonEnum.B);
-            _buttonMapping.Add(2, ControllerButtonEnum.A);
-            _buttonMapping.Add(1, ControllerButtonEnum.B);
-            _buttonMapping.Add(0, ControllerButtonEnum.A);
-            _buttonMapping.Add(4, ControllerButtonEnum.Select);
-            _buttonMapping.Add(6, ControllerButtonEnum.Start);
+            //_buttonMapping.Add(11, InputKeyEnum.Up);
+            //_buttonMapping.Add(12, InputKeyEnum.Down);
+            //_buttonMapping.Add(13, InputKeyEnum.Left);
+            //_buttonMapping.Add(14, InputKeyEnum.Right);
+            //_buttonMapping.Add(3, InputKeyEnum.B);
+            //_buttonMapping.Add(2, InputKeyEnum.A);
+            //_buttonMapping.Add(1, InputKeyEnum.B);
+            //_buttonMapping.Add(0, InputKeyEnum.A);
+            //_buttonMapping.Add(4, InputKeyEnum.Select);
+            //_buttonMapping.Add(6, InputKeyEnum.Start);
         }
 
-        public bool TryMap(int button, out ControllerButtonEnum mappedInput)
+        public bool TryMap(int button, out InputKeyEnum mappedInput)
         {
             return _buttonMapping.TryGetValue(button, out mappedInput);
         }

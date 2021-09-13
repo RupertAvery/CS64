@@ -2,6 +2,7 @@
 using System.IO;
 using System.IO.Compression;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
 using CS64.Core.CPU;
@@ -18,13 +19,16 @@ namespace CS64.Core.Interface
         //CLOCK_PAL = 985248 Hz * 8
         //CLOCK_NTSC = 1022727 Hz * 8
 
+
         //CLOCK_VICII_PAL = 7881984 Hz / 60 = 131366 cycles / frame
         //CLOCK_VICII_NTSC = 8181816 Hz / 60 = 136363 cycles / frame
 
+
         public const int CYCLES_PER_FRAME = 131366;
 
-        private const double NTSC_SECONDS_PER_FRAME = 1 / 60D;
-        private const double PAL_SECONDS_PER_FRAME = 1 / 50D;
+        //private const double SECONDS_PER_FRAME = 1 / 60D;
+        private const double SECONDS_PER_FRAME = 1 / 50D;
+
         private double _fps;
         private int _cyclesLeft;
         private long _cyclesRan;
@@ -59,6 +63,8 @@ namespace CS64.Core.Interface
         public int Height => _c64.Vic.Height;
 
         private Playback _playback;
+
+        private KeyboardMatrix _keyboardMatrix = new KeyboardMatrix();
 
         private void SaveState(Stream stream)
         {
@@ -104,7 +110,7 @@ namespace CS64.Core.Interface
 
         private int _scale = 4;
 
-        public void SetMapping(ControllerButtonEnum o)
+        public void SetMapping(InputKeyEnum o)
         {
             InputProvider.SetMapping(o);
         }
@@ -161,6 +167,9 @@ namespace CS64.Core.Interface
 
 
             _c64.Init();
+            _c64.Cia1.PortAWrite = PortAWrite;
+            _c64.Cia1.PortBRead = PortBRead;
+
 
             SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_JOYSTICK);
 
@@ -173,7 +182,7 @@ namespace CS64.Core.Interface
 
             _videoProvider = new VideoProvider(Window, _c64.Vic.Width, _c64.Vic.Height);
             _audioProvider = new AudioProvider();
-            InputProvider = new InputProvider(ControllerEvent);
+            InputProvider = new InputProvider(InputEvent);
 
             _videoProvider.Initialize();
             _videoProvider.Clear();
@@ -185,6 +194,32 @@ namespace CS64.Core.Interface
 
         }
 
+
+        public uint KeyRow;
+        public uint key_col;
+        public uint key_row;
+
+
+        private uint PortBRead()
+        {
+            if (key_col == 0xFF && KeyPressed)
+            {
+                return 0x01;
+            }
+
+            if (KeyPressed && key_col != 0xFF)
+            {
+                var index = _keyboardMatrix.ColumnIndex[key_col];
+                return rowCols[index] ^ 0xFF;
+            }
+            return 0xFF;
+        }
+
+        private void PortAWrite(uint value)
+        {
+            key_col = value ^ 0xFF;
+            //Console.WriteLine(Convert.ToString(key_col, 2).PadLeft(8));
+        }
 
         private bool _justLoaded;
 
@@ -204,59 +239,70 @@ namespace CS64.Core.Interface
             _c64 = new MC6502State();
         }
 
-        private void ControllerEvent(object sender, ControllerEventArgs args)
+        private void InputEvent(object sender, InputEventArgs args)
         {
             switch (args.EventType)
             {
-                case ControllerEventType.BUTTON_UP:
-                    if (((uint)args.Button & 0x100) == 0x100)
+                case InputEventType.BUTTON_UP:
+                    if (((uint)args.Key & 0x1000) == 0x1000)
                     {
-                        _c64.Controller[args.Player] &= ~(uint)args.Button;
-                    }
-                    else
-                    {
-                        switch (args.Button)
+                        switch (args.Key)
                         {
-                            case ControllerButtonEnum.Rewind:
+                            case InputKeyEnum.Rewind:
                                 _rewind = false;
                                 break;
-                            case ControllerButtonEnum.FastForward:
+                            case InputKeyEnum.FastForward:
                                 _fastForward = false;
                                 break;
                         }
                     }
-                    break;
-                case ControllerEventType.BUTTON_DOWN:
-                    if (((uint)args.Button & 0x100) == 0x100)
+                    else
                     {
-                        _c64.Controller[args.Player] |= (uint)args.Button;
+                        _keyboardMatrix.TryEncode(args.Key, out var rowCol);
+                        var index = _keyboardMatrix.ColumnIndex[rowCol.Col];
+                        rowCols[index] = 0;
+                    }
+                    break;
+                case InputEventType.BUTTON_DOWN:
+                    if (((uint)args.Key & 0x1000) == 0x1000)
+                    {
+                        switch (args.Key)
+                        {
+                            case InputKeyEnum.Rewind:
+                                _rewind = true;
+                                break;
+                            case InputKeyEnum.FastForward:
+                                _fastForward = true;
+                                break;
+                            case InputKeyEnum.SaveState:
+                                _saveStatePending = true;
+                                break;
+                            case InputKeyEnum.LoadState:
+                                _loadStatePending = true;
+                                break;
+                            case InputKeyEnum.NextState:
+                                break;
+                            case InputKeyEnum.PreviousState:
+                                break;
+                        }
                     }
                     else
                     {
-                        switch (args.Button)
-                        {
-                            case ControllerButtonEnum.Rewind:
-                                _rewind = true;
-                                break;
-                            case ControllerButtonEnum.FastForward:
-                                _fastForward = true;
-                                break;
-                            case ControllerButtonEnum.SaveState:
-                                _saveStatePending = true;
-                                break;
-                            case ControllerButtonEnum.LoadState:
-                                _loadStatePending = true;
-                                break;
-                            case ControllerButtonEnum.NextState:
-                                break;
-                            case ControllerButtonEnum.PreviousState:
-                                break;
-                        }
+                        KeyPressed = true;
+                        _keyboardMatrix.TryEncode(args.Key, out var rowCol);
+                        var index = _keyboardMatrix.ColumnIndex[rowCol.Col];
+                        rowCols[index] = rowCol.Row;
+
+                        Console.WriteLine(args.Key);
                     }
 
                     break;
             }
         }
+
+        private bool KeyPressed = false;
+        private uint[] rowCols = new uint[9];
+
 
         public void EmulationThreadHandler()
         {
@@ -478,7 +524,7 @@ namespace CS64.Core.Interface
                         double currentSec = GetTime();
 
                         // Reset time if behind schedule
-                        if (currentSec - nextFrameAt >= NTSC_SECONDS_PER_FRAME)
+                        if (currentSec - nextFrameAt >= SECONDS_PER_FRAME)
                         {
                             double diff = currentSec - nextFrameAt;
                             Console.WriteLine("Can't keep up! Skipping " + (int)(diff * 1000) + " milliseconds");
@@ -487,7 +533,7 @@ namespace CS64.Core.Interface
 
                         if (currentSec >= nextFrameAt)
                         {
-                            nextFrameAt += NTSC_SECONDS_PER_FRAME;
+                            nextFrameAt += SECONDS_PER_FRAME;
 
                             _threadSync.Set();
                         }
@@ -504,7 +550,7 @@ namespace CS64.Core.Interface
                             // Use Math.Floor to truncate to 2 decimal places
                             _fps = Math.Floor((frames / diff) * 100) / 100;
                             //Mips = Math.Floor((mips / diff) * 100) / 100;
-                            // UpdateTitle();
+                            UpdateTitle();
                             //Seconds++;
 
                             fpsEvalTimer += 1;
@@ -534,22 +580,58 @@ namespace CS64.Core.Interface
             );
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private bool HasModifier(SDL_KeyboardEvent evtKey, SDL_Keymod modifier)
+        {
+            return (evtKey.keysym.mod & modifier) == modifier;
+        }
+
         private void KeyEvent(SDL_KeyboardEvent evtKey)
         {
             if (evtKey.type == SDL_EventType.SDL_KEYDOWN)
             {
                 if (!InputProvider.HandleEvent(evtKey))
                 {
+                    if (HasModifier(evtKey, SDL_Keymod.KMOD_LCTRL) || HasModifier(evtKey, SDL_Keymod.KMOD_RCTRL))
+                    {
+                        switch (evtKey.keysym.sym)
+                        {
+
+                            case SDL_Keycode.SDLK_BACKSLASH:
+                                _fastForward = true;
+                                _videoProvider.SetMessage("Fast Forward");
+                                break;
+                            case SDL_Keycode.SDLK_p:
+                                _paused = !_paused;
+                                _videoProvider.SetMessage(_paused ? "Paused" : "Resumed");
+                                break;
+                            case SDL_Keycode.SDLK_f:
+                                if (_paused)
+                                {
+                                    _videoProvider.SetMessage("Frame Advanced");
+                                    _frameAdvance = true;
+                                }
+                                break;
+                            case SDL_Keycode.SDLK_BACKSPACE:
+                                if (!_rewind)
+                                {
+                                    _videoProvider.SetMessage("Rewinding...");
+                                    _rewind = true;
+                                    if (_paused)
+                                    {
+                                        _frameAdvance = true;
+                                    }
+                                }
+                                break;
+                        }
+                    }
+
+
                     switch (evtKey.keysym.sym)
                     {
-                        case SDL_Keycode.SDLK_r:
+                        case SDL_Keycode.SDLK_F10:
                             _resetPending = true;
                             _videoProvider.SetMessage("Reset");
-                            break;
-
-                        case SDL_Keycode.SDLK_BACKSLASH:
-                            _fastForward = true;
-                            _videoProvider.SetMessage("Fast Forward");
                             break;
 
                         case SDL_Keycode.SDLK_F2:
@@ -573,28 +655,6 @@ namespace CS64.Core.Interface
                             StateChanged?.Invoke(_stateSlot);
                             break;
 
-                        case SDL_Keycode.SDLK_p:
-                            _paused = !_paused;
-                            _videoProvider.SetMessage(_paused ? "Paused" : "Resumed");
-                            break;
-                        case SDL_Keycode.SDLK_f:
-                            if (_paused)
-                            {
-                                _videoProvider.SetMessage("Frame Advanced");
-                                _frameAdvance = true;
-                            }
-                            break;
-                        case SDL_Keycode.SDLK_BACKSPACE:
-                            if (!_rewind)
-                            {
-                                _videoProvider.SetMessage("Rewinding...");
-                                _rewind = true;
-                                if (_paused)
-                                {
-                                    _frameAdvance = true;
-                                }
-                            }
-                            break;
                     }
                 }
             }
@@ -603,14 +663,17 @@ namespace CS64.Core.Interface
             {
                 if (!InputProvider.HandleEvent(evtKey))
                 {
-                    switch (evtKey.keysym.sym)
+                    if (HasModifier(evtKey, SDL_Keymod.KMOD_LCTRL) || HasModifier(evtKey, SDL_Keymod.KMOD_RCTRL))
                     {
-                        case SDL_Keycode.SDLK_BACKSLASH:
-                            _fastForward = false;
-                            break;
-                        case SDL_Keycode.SDLK_BACKSPACE:
-                            _rewind = false;
-                            break;
+                        switch (evtKey.keysym.sym)
+                        {
+                            case SDL_Keycode.SDLK_BACKSLASH:
+                                _fastForward = false;
+                                break;
+                            case SDL_Keycode.SDLK_BACKSPACE:
+                                _rewind = false;
+                                break;
+                        }
                     }
                 }
             }

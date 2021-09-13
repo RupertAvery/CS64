@@ -228,6 +228,7 @@ namespace CS64.Core.Video
             uint data = address switch
             {
                 0x12 => raster_line,
+                0x18 => (video_matrix << 4) | (CB << 1),
                 0x19 => interrupt_register,
                 _ => throw new AccessViolationException()
             };
@@ -594,7 +595,7 @@ namespace CS64.Core.Video
         private bool main_border;
         private bool vertical_border;
 
-        private uint cycles;
+        public uint cycles;
         private int dot;
         private int scanline;
     }

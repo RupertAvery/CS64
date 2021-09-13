@@ -16,7 +16,7 @@ namespace CS64.UI
         public Action LoadState { get; set; }
         public Action SaveState { get; set; }
         public Action<int,int> ResizeWindow { get; set; }
-        public Action<ControllerButtonEnum> SetMapping { get; set; }
+        public Action<InputKeyEnum> SetMapping { get; set; }
         public Configuration Configuration { get;set;}
 
         public MainForm(Main main)

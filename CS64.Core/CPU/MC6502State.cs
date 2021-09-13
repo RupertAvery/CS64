@@ -48,8 +48,7 @@ namespace CS64.Core.CPU
         public bool dma_transfer;
         public bool dma_dummy;
 
-        public uint[] Controller = new uint[2];
-        public uint[] ControllerRegister = new uint[2];
+
         public uint P
         {
             get =>

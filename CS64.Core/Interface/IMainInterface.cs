@@ -13,6 +13,6 @@ namespace CS64.Core.Interface
         Action LoadState { get; set; }
         Action SaveState { get; set; }
         Action<int, int> ResizeWindow { get; set; }
-        Action<ControllerButtonEnum> SetMapping { get; set; }
+        Action<InputKeyEnum> SetMapping { get; set; }
     }
 }
