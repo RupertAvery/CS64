@@ -12,10 +12,10 @@ and you should be able to type in programs and run them.
 
 # Todo
 
-* Fix keyboard mappings and multiple-presses (LSHIFT)
-* Fix video display (remove excessive borders)
-* Graphics modes and sprites
 * Fix interrupts
+* Excessive borders hack - look for documentation
+* Graphics modes and sprites
+* Joysticks
 * Test timers
 * States
 * Rewind

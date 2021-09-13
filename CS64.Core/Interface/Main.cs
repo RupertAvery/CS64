@@ -11,7 +11,146 @@ using static SDL2.SDL;
 
 namespace CS64.Core.Interface
 {
-    public class Main : IDisposable
+    public partial class Main
+    {
+        private readonly KeyboardMatrix _keyboardMatrix = new KeyboardMatrix();
+        private bool DeletePressed = false;
+
+        public uint key_col;
+        private uint[] rowCols = new uint[8];
+
+        private void SetupKeyboardScanRoutines()
+        {
+            _c64.Cia1.PortAWrite = PortAWrite;
+            _c64.Cia1.PortBRead = PortBRead;
+        }
+
+        private uint PortBRead()
+        {
+            // Initially scan routine pulls all outputs low 
+            // (now high since we flipped it)
+            if (key_col == 0xFF &&
+                // check if anything pressed
+                ((rowCols[0] |
+                  rowCols[1] |
+                  rowCols[2] |
+                  rowCols[3] |
+                  rowCols[4] |
+                  rowCols[5] |
+                  rowCols[6] |
+                  rowCols[7]) > 0)
+
+                | DeletePressed
+                )
+            {
+                // send any non-zero value to trigger scan routine
+                return 0x01;
+            }
+
+            if (DeletePressed & key_col == 1)
+            {
+                return 0xFE;
+            }
+
+            // The scan routine will now have a shifting 1 bit (never 0xFF)
+            // So we can compare each column test
+            if (key_col != 0xFF)
+            {
+                // convert the column bit into an index
+                var index = _keyboardMatrix.ColumnIndex[key_col];
+                // invert the row bit because CIA expects the line to be pulled to 0
+                return rowCols[index] ^ 0xFF;
+            }
+
+            return 0xFF;
+        }
+
+        private void PortAWrite(uint value)
+        {
+            // flip the output so we get a shifting 1 bit instead of 0
+            key_col = value ^ 0xFF;
+        }
+
+        private void InputEvent(object sender, InputEventArgs args)
+        {
+            switch (args.EventType)
+            {
+                case InputEventType.BUTTON_UP:
+                    if (((uint)args.Key & 0x1000) == 0x1000)
+                    {
+                        switch (args.Key)
+                        {
+                            case InputKeyEnum.Rewind:
+                                _rewind = false;
+                                break;
+                            case InputKeyEnum.FastForward:
+                                _fastForward = false;
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        if (args.Key == InputKeyEnum.DELETE)
+                        {
+                            DeletePressed = false;
+                        }
+                        else
+                        {
+                            _keyboardMatrix.TryEncode(args.Key, out var rowCol);
+                            var index = _keyboardMatrix.ColumnIndex[rowCol.Col];
+                            // Clear specific bit only
+                            rowCols[index] &= rowCol.Row ^ 0xFF;
+                        }
+                    }
+                    break;
+                case InputEventType.BUTTON_DOWN:
+                    if (((uint)args.Key & 0x1000) == 0x1000)
+                    {
+                        switch (args.Key)
+                        {
+                            case InputKeyEnum.Rewind:
+                                _rewind = true;
+                                break;
+                            case InputKeyEnum.FastForward:
+                                _fastForward = true;
+                                break;
+                            case InputKeyEnum.SaveState:
+                                _saveStatePending = true;
+                                break;
+                            case InputKeyEnum.LoadState:
+                                _loadStatePending = true;
+                                break;
+                            case InputKeyEnum.NextState:
+                                break;
+                            case InputKeyEnum.PreviousState:
+                                break;
+                        }
+                    }
+                    else
+                    {
+                        // For some reason DELETE key doesn't work properly
+                        // so, force it to work
+                        if (args.Key == InputKeyEnum.DELETE)
+                        {
+                            DeletePressed = true;
+                        }
+                        else
+                        {
+                            _keyboardMatrix.TryEncode(args.Key, out var rowCol);
+                            var index = _keyboardMatrix.ColumnIndex[rowCol.Col];
+                            // Setr specific bit without erasing any other bits
+                            rowCols[index] |= rowCol.Row;
+                        }
+
+                    }
+
+                    break;
+            }
+        }
+    }
+
+
+    public partial class Main : IDisposable
     {
         //PAL C64 master clock: 17.734475 MHz / 18
         //NTSC C64 master clock: 14.31818 MHz / 14
@@ -64,7 +203,7 @@ namespace CS64.Core.Interface
 
         private Playback _playback;
 
-        private KeyboardMatrix _keyboardMatrix = new KeyboardMatrix();
+
 
         private void SaveState(Stream stream)
         {
@@ -167,8 +306,7 @@ namespace CS64.Core.Interface
 
 
             _c64.Init();
-            _c64.Cia1.PortAWrite = PortAWrite;
-            _c64.Cia1.PortBRead = PortBRead;
+            SetupKeyboardScanRoutines();
 
 
             SDL_Init(SDL_INIT_AUDIO | SDL_INIT_VIDEO | SDL_INIT_GAMECONTROLLER | SDL_INIT_JOYSTICK);
@@ -194,33 +332,6 @@ namespace CS64.Core.Interface
 
         }
 
-
-        public uint KeyRow;
-        public uint key_col;
-        public uint key_row;
-
-
-        private uint PortBRead()
-        {
-            if (key_col == 0xFF && KeyPressed)
-            {
-                return 0x01;
-            }
-
-            if (KeyPressed && key_col != 0xFF)
-            {
-                var index = _keyboardMatrix.ColumnIndex[key_col];
-                return rowCols[index] ^ 0xFF;
-            }
-            return 0xFF;
-        }
-
-        private void PortAWrite(uint value)
-        {
-            key_col = value ^ 0xFF;
-            //Console.WriteLine(Convert.ToString(key_col, 2).PadLeft(8));
-        }
-
         private bool _justLoaded;
 
         private void LoadInternal(string path)
@@ -238,71 +349,6 @@ namespace CS64.Core.Interface
         {
             _c64 = new MC6502State();
         }
-
-        private void InputEvent(object sender, InputEventArgs args)
-        {
-            switch (args.EventType)
-            {
-                case InputEventType.BUTTON_UP:
-                    if (((uint)args.Key & 0x1000) == 0x1000)
-                    {
-                        switch (args.Key)
-                        {
-                            case InputKeyEnum.Rewind:
-                                _rewind = false;
-                                break;
-                            case InputKeyEnum.FastForward:
-                                _fastForward = false;
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        KeyPressed = false;
-                        _keyboardMatrix.TryEncode(args.Key, out var rowCol);
-                        var index = _keyboardMatrix.ColumnIndex[rowCol.Col];
-                        rowCols[index] = 0;
-                    }
-                    break;
-                case InputEventType.BUTTON_DOWN:
-                    if (((uint)args.Key & 0x1000) == 0x1000)
-                    {
-                        switch (args.Key)
-                        {
-                            case InputKeyEnum.Rewind:
-                                _rewind = true;
-                                break;
-                            case InputKeyEnum.FastForward:
-                                _fastForward = true;
-                                break;
-                            case InputKeyEnum.SaveState:
-                                _saveStatePending = true;
-                                break;
-                            case InputKeyEnum.LoadState:
-                                _loadStatePending = true;
-                                break;
-                            case InputKeyEnum.NextState:
-                                break;
-                            case InputKeyEnum.PreviousState:
-                                break;
-                        }
-                    }
-                    else
-                    {
-                        KeyPressed = true;
-                        _keyboardMatrix.TryEncode(args.Key, out var rowCol);
-                        var index = _keyboardMatrix.ColumnIndex[rowCol.Col];
-                        rowCols[index] = rowCol.Row;
-
-                        Console.WriteLine(args.Key);
-                    }
-
-                    break;
-            }
-        }
-
-        private bool KeyPressed = false;
-        private uint[] rowCols = new uint[9];
 
 
         public void EmulationThreadHandler()

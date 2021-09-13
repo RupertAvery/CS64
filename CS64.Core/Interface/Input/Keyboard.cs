@@ -32,7 +32,18 @@ namespace CS64.Core.Interface.Input
             _keyMapping.Add(SDL_Keycode.SDLK_HOME, InputKeyEnum.HOME);
             _keyMapping.Add(SDL_Keycode.SDLK_END, InputKeyEnum.STOP);
             _keyMapping.Add(SDL_Keycode.SDLK_ESCAPE, InputKeyEnum.RESTORE);
-            _keyMapping.Add(SDL_Keycode.SDLK_TAB, InputKeyEnum.CTRL);
+            _keyMapping.Add(SDL_Keycode.SDLK_LALT, InputKeyEnum.CTRL);
+            _keyMapping.Add(SDL_Keycode.SDLK_RALT, InputKeyEnum.CTRL);
+
+            _keyMapping.Add(SDL_Keycode.SDLK_SLASH, InputKeyEnum.SLASH);
+            _keyMapping.Add(SDL_Keycode.SDLK_LEFTBRACKET, InputKeyEnum.AT);
+            _keyMapping.Add(SDL_Keycode.SDLK_RIGHTBRACKET, InputKeyEnum.ASTERISK);
+
+            //TODO: CARET (uparrow)
+            //_keyMapping.Add(SDL_Keycode.SDLK_BACKSLASH, InputKeyEnum.CARET);
+            _keyMapping.Add(SDL_Keycode.SDLK_EQUALS, InputKeyEnum.PLUS);
+            _keyMapping.Add(SDL_Keycode.SDLK_MINUS, InputKeyEnum.MINUS);
+            _keyMapping.Add(SDL_Keycode.SDLK_BACKSLASH, InputKeyEnum.EQUALS);
 
             _keyMapping.Add(SDL_Keycode.SDLK_0, InputKeyEnum.D0);
             _keyMapping.Add(SDL_Keycode.SDLK_1, InputKeyEnum.D1);
@@ -44,10 +55,6 @@ namespace CS64.Core.Interface.Input
             _keyMapping.Add(SDL_Keycode.SDLK_7, InputKeyEnum.D7);
             _keyMapping.Add(SDL_Keycode.SDLK_8, InputKeyEnum.D8);
             _keyMapping.Add(SDL_Keycode.SDLK_9, InputKeyEnum.D9);
-
-            _keyMapping.Add(SDL_Keycode.SDLK_KP_COLON, InputKeyEnum.COLON);
-            _keyMapping.Add(SDL_Keycode.SDLK_KP_COMMA, InputKeyEnum.COMMA);
-            _keyMapping.Add(SDL_Keycode.SDLK_KP_EQUALS, InputKeyEnum.EQUALS);
 
             _keyMapping.Add(SDL_Keycode.SDLK_a, InputKeyEnum.A);
             _keyMapping.Add(SDL_Keycode.SDLK_b, InputKeyEnum.B);

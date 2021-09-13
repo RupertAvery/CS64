@@ -315,7 +315,7 @@ namespace CS64.Core.Video
                             }
                         }
                     }
-                    Console.WriteLine($"{rtc_tenhours}{rtc_hours}:{rtc_tenminutes}{rtc_minutes}:{rtc_tenseconds}{rtc_seconds}");
+                    //Console.WriteLine($"{rtc_tenhours}{rtc_hours}:{rtc_tenminutes}{rtc_minutes}:{rtc_tenseconds}{rtc_seconds}");
                 }
             }
 
