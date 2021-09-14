@@ -8,7 +8,7 @@ namespace CS64.Core.Interface.Input
     {
         private readonly Dictionary<int, Controller> _deviceControllerMapping = new Dictionary<int, Controller>();
 
-        private readonly Keyboard _keyboard = new Keyboard();
+        private readonly Keyboard _keyboard = new AnsiKeyboard();
 
         public InputEvent InputEvent { get; set; }
 
@@ -38,9 +38,9 @@ namespace CS64.Core.Interface.Input
             {
                 case SDL_EventType.SDL_KEYUP:
                     {
-                        if (_keyboard.TryMap(keyboardEvent.keysym.sym, out InputKeyEnum mappedInput))
+                        if (_keyboard.TryMap(keyboardEvent.keysym.sym, keyboardEvent.keysym.mod, out InputKeyEnum[] mappedInput))
                         {
-                            InputEvent?.Invoke(null, new InputEventArgs() { EventType = InputEventType.BUTTON_UP, Player = 0, Key = mappedInput });
+                            InputEvent?.Invoke(null, new InputEventArgs() { EventType = InputEventType.BUTTON_UP, Player = 0, Keys = mappedInput });
                             handled = true;
                         }
 
@@ -50,7 +50,7 @@ namespace CS64.Core.Interface.Input
                     {
                         if (_mappingMode)
                         {
-                            if (_keyboard.TrySetMap(keyboardEvent.keysym.sym, _mappingTarget))
+                            if (_keyboard.TrySetMap(keyboardEvent.keysym.sym, keyboardEvent.keysym.mod, _mappingTargets))
                             {
                                 _mappingMode = false;
                                 handled = true;
@@ -58,9 +58,9 @@ namespace CS64.Core.Interface.Input
                         }
                         else
                         {
-                            if (_keyboard.TryMap(keyboardEvent.keysym.sym, out InputKeyEnum mappedInput))
+                            if (_keyboard.TryMap(keyboardEvent.keysym.sym, keyboardEvent.keysym.mod, out InputKeyEnum[] mappedInput))
                             {
-                                InputEvent?.Invoke(null, new InputEventArgs() { EventType = InputEventType.BUTTON_DOWN, Player = 0, Key = mappedInput });
+                                InputEvent?.Invoke(null, new InputEventArgs() { EventType = InputEventType.BUTTON_DOWN, Player = 0, Keys = mappedInput });
                                 handled = true;
                             }
                         }
@@ -81,9 +81,9 @@ namespace CS64.Core.Interface.Input
                     {
                         if (_deviceControllerMapping.TryGetValue(buttonEvent.which, out var controller))
                         {
-                            if (controller.TryMap(buttonEvent.button, out InputKeyEnum mappedInput))
+                            if (controller.TryMap(buttonEvent.button, out InputKeyEnum[] mappedInput))
                             {
-                                InputEvent?.Invoke(null, new InputEventArgs() { EventType = InputEventType.BUTTON_UP, Player = controller.ControllerIndex, Key = mappedInput });
+                                InputEvent?.Invoke(null, new InputEventArgs() { EventType = InputEventType.BUTTON_UP, Player = controller.ControllerIndex, Keys = mappedInput });
                                 handled = true;
                             }
                         }
@@ -95,9 +95,9 @@ namespace CS64.Core.Interface.Input
                     {
                         if (_deviceControllerMapping.TryGetValue(buttonEvent.which, out var controller))
                         {
-                            if (controller.TryMap(buttonEvent.button, out InputKeyEnum mappedInput))
+                            if (controller.TryMap(buttonEvent.button, out InputKeyEnum[] mappedInput))
                             {
-                                InputEvent?.Invoke(null, new InputEventArgs() { EventType = InputEventType.BUTTON_DOWN, Player = controller.ControllerIndex, Key = mappedInput });
+                                InputEvent?.Invoke(null, new InputEventArgs() { EventType = InputEventType.BUTTON_DOWN, Player = controller.ControllerIndex, Keys = mappedInput });
                                 handled = true;
                             }
                         }
@@ -138,12 +138,12 @@ namespace CS64.Core.Interface.Input
 
 
         private bool _mappingMode = false;
-        private InputKeyEnum _mappingTarget;
+        private InputKeyEnum[] _mappingTargets;
 
-        public void SetMapping(InputKeyEnum key)
+        public void SetMapping(InputKeyEnum[] key)
         {
             _mappingMode = true;
-            _mappingTarget = key;
+            _mappingTargets = key;
         }
 
         public void ClearMapping(InputKeyEnum key)
@@ -151,7 +151,7 @@ namespace CS64.Core.Interface.Input
             //_mappingTarget = button;
         }
 
-        public string GetMapping(InputKeyEnum key)
+        public string GetMapping(InputKeyEnum[] key)
         {
             if (_keyboard.TryGetMap(key, out var mappedKey))
             {

@@ -10,7 +10,7 @@ namespace CS64.Core.Interface.Input
         private IntPtr joystick;
         private int instanceId;
 
-        private readonly Dictionary<int, InputKeyEnum> _buttonMapping = new Dictionary<int, InputKeyEnum>();
+        private readonly Dictionary<int, InputKeyEnum[]> _buttonMapping = new Dictionary<int, InputKeyEnum[]>();
         
         public int ControllerIndex { get; set; }
 
@@ -28,7 +28,7 @@ namespace CS64.Core.Interface.Input
             //_buttonMapping.Add(6, InputKeyEnum.Start);
         }
 
-        public bool TryMap(int button, out InputKeyEnum mappedInput)
+        public bool TryMap(int button, out InputKeyEnum[] mappedInput)
         {
             return _buttonMapping.TryGetValue(button, out mappedInput);
         }

@@ -24,10 +24,10 @@ namespace CS64.UI
             mapWait.ShowDialog(this);
         }
 
-        private void GetMapping(InputKeyEnum key, TextBox textbox)
-        {
-            textbox.Text = _main.InputProvider.GetMapping(key);
-        }
+        //private void GetMapping(InputKeyEnum key, TextBox textbox)
+        //{
+        //    textbox.Text = _main.InputProvider.GetMapping(key);
+        //}
 
         private void MappingForm_Load(object sender, EventArgs e)
         {
