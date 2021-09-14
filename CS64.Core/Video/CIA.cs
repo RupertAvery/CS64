@@ -9,11 +9,12 @@ namespace CS64.Core.Video
 
     public class CIA
     {
-        public uint PortA { get; set; }
-        public uint PortB { get; set; }
+        public uint PortA { get; private set; }
+        public uint PortB { get; private set; }
+
         // Bit X: 0=Input (read only), 1=Output (read and write)
-        private uint latch_a;
-        private uint latch_b;
+        private uint port_a;
+        private uint port_b;
         private uint readwrite_mask_a;
         private uint readwrite_mask_b;
 
@@ -35,8 +36,8 @@ namespace CS64.Core.Video
             address &= 0x0F; // Mirror every 16 address bytes
             data = address switch
             {
-                0x0 => PortARead?.Invoke() ?? PortA,
-                0x1 => PortBRead?.Invoke() ?? PortA,
+                0x0 => ReadPortA(),
+                0x1 => ReadPortB(),
                 0x2 => readwrite_mask_a,
                 0x3 => readwrite_mask_b,
                 0x4 => (uint)timer_A & 0xFF,
@@ -57,7 +58,17 @@ namespace CS64.Core.Video
         private uint int_mask;
         private uint int_data;
 
+        private uint ReadPortA()
+        {
+            port_a = PortARead?.Invoke() ?? PortA;
+            return port_a;
+        }
 
+        private uint ReadPortB()
+        {
+            port_b = PortBRead?.Invoke() ?? PortB;
+            return port_b;
+        }
 
         private uint ReadInterrupts()
         {
@@ -68,28 +79,55 @@ namespace CS64.Core.Video
 
         private void UpdatePortA()
         {
-            var output = latch_a | (readwrite_mask_a ^ 0xFF);
+            //var output = port_b |= (readwrite_mask_b ^ 0xFF);
+            var output = port_a;
+            output &= readwrite_mask_a;
+ 
             if (PortAWrite != null)
             {
                 PortAWrite(output);
             }
             else
             {
-                PortA = output;
+                PortA &= readwrite_mask_a ^ 0xFF;
+                PortA |= output;
             }
+
+            //var output = port_a |= (readwrite_mask_a ^ 0xFF);
+            //if (PortAWrite != null)
+            //{
+            //    PortAWrite(output);
+            //}
+            //else
+            //{
+            //    PortA = output;
+            //}
         }
 
         private void UpdatePortB()
         {
-            var output = latch_b | (readwrite_mask_b ^ 0xFF);
+            var output = port_b;
+            port_b &= readwrite_mask_b;
+
             if (PortBWrite != null)
             {
                 PortBWrite(output);
             }
             else
             {
-                PortB = output;
+                PortB &= readwrite_mask_b ^ 0xFF;
+                PortB |= output;
             }
+
+            //var output = port_b |= (readwrite_mask_b ^ 0xFF);
+            //if (PortBWrite != null)
+            //{
+            //    PortBWrite(output);
+            //}
+            //else
+            //{
+            //    PortB = output;
+            //}
         }
 
         public void Write(uint address, uint data)
@@ -99,38 +137,13 @@ namespace CS64.Core.Video
             switch (address)
             {
                 case 0x0:
-                    latch_a = data;
+                    port_a = data;
                     UpdatePortA();
-
-                    // mask the incoming data bits
-                    //data &= readwrite_mask_a;
-
-                    // preserve the existing bits with an inverse of the mask
-                    //if (PortAWrite != null)
-                    //{
-                    //    PortAWrite(data);
-                    //}
-                    //else
-                    //{
-                    //    PortA &= readwrite_mask_a ^ 0xFF;
-                    //    // merge the data
-                    //    PortA |= data;
-                    //}
 
                     break;
                 case 0x1:
-                    latch_b = data;
+                    port_b = data;
                     UpdatePortB();
-                    //data &= readwrite_mask_b;
-                    //if (PortBWrite != null)
-                    //{
-                    //    PortBWrite(data);
-                    //}
-                    //else
-                    //{
-                    //    PortB &= readwrite_mask_b ^ 0xFF;
-                    //    PortB |= data;
-                    //}
 
                     break;
                 case 0x2:
@@ -305,7 +318,7 @@ namespace CS64.Core.Video
         private uint tod_frame_counter;
         public void TimeOfDay()
         {
-            if(tod_stopped) return;
+            if (tod_stopped) return;
 
             tod_frame_counter++;
             if (tod_frame_counter > tod_frame_divider)

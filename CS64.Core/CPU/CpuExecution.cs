@@ -26,6 +26,17 @@ namespace CS64.Core.CPU
             Cia1.RequestInterrupt = () => TriggerInterrupt(InterruptTypeEnum.IRQ);
 
             Cia2 = new CIA();
+
+            // https://retrocomputing.stackexchange.com/questions/7791/6510-i-o-port-initialisation
+
+            //I/O lines with programmable direction are set to input on reset. The 6510 is no exception,
+            //its data direction register at address 0 is set to 0 on reset, all 6 I/O lines become inputs.
+            //The circuitry outside the processor includes a pullup resistor on the I/O lines controlling
+            //banking, so that they are in a known stable state even if the data direction is set to input.
+
+            // Set the IO Data direction register to input on startup, else I/O will be be inaccessible.
+            //IO_Port_DDR = 0xFF;
+            IO_Port_DR = 0x1F;
         }
 
 
@@ -129,14 +140,16 @@ namespace CS64.Core.CPU
                 }
             }
 
-            switch (PC)
-            {
-                case 0xEA8E: // keyboard routine
-                    {
-                        var x = 1;
-                        break;
-                    }
-            }
+            //switch (PC)
+            //{
+                    
+            //    case 0xFDCD: // Setup CIA
+            //    //case 0xEA8E: // keyboard routine
+            //        {
+            //            var x = 1;
+            //            break;
+            //        }
+            //}
 
             var ins = BusRead(PC);
             var bytes = MC6502InstructionSet.bytes[ins];

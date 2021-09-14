@@ -162,9 +162,6 @@ namespace CS64.Core.CPU
                 case 0x0001:
                     _io_port = data;
                     UpdateIOPort();
-                    //data &= IO_Port_DDR;
-                    //IO_Port_DR &= IO_Port_DDR ^ 0xFF;
-                    //IO_Port_DR |= data;
                     break;
                 case 0x0000:
                     IO_Port_DDR = data;
@@ -179,7 +176,10 @@ namespace CS64.Core.CPU
 
         private void UpdateIOPort()
         {
-            IO_Port_DR = _io_port | (IO_Port_DDR ^ 0xFF);
+            var output = _io_port;
+            output &= IO_Port_DDR;
+            IO_Port_DR &= (IO_Port_DDR ^ 0xFF);
+            IO_Port_DR |= output;
         }
 
         // https://www.c64-wiki.com/wiki/Bank_Switching
